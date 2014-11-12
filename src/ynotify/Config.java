@@ -6,4 +6,6 @@ public class Config {
 	
 	public static final String Server_hostname = "127.0.0.1";
 	public static final int Server_port = 11400;
+        
+        public static final int Client_reconnect_max_times = 100;
 }

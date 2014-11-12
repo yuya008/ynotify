@@ -10,6 +10,7 @@ public class Net
     private InputStream is = null;
     private OutputStream os = null;
     private static ServerSocket sock = null;
+    private static Socket client = null;
 	
     public static final int NET_SERVER = 0;
     public static final int NET_CLIENT = 1;
@@ -32,7 +33,7 @@ public class Net
     
     public static Net initClient(String hostname, int port) throws IOException
     {
-        Socket client = new Socket();
+        client = new Socket();
         client.setKeepAlive(true);
         client.connect(new InetSocketAddress(hostname, port));
         return new Net(client, NET_CLIENT);

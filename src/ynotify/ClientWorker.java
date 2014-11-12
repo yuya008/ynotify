@@ -5,10 +5,11 @@ import java.util.*;
 
 public class ClientWorker implements Runnable {
     private String path = null;
-    private ArrayList<Message> fileList = new ArrayList<Message>();
-    private ArrayList<Message> newList = new ArrayList<Message>();
+    private boolean reconnect = false;
+    private int reconnTimes = 0;
+    private ArrayList<Message> fileList = new ArrayList();
+    private ArrayList<Message> newList = new ArrayList();
     
-    public boolean push = false;
     private Net client = null;
 
     private Protocol prot = null;
@@ -18,21 +19,51 @@ public class ClientWorker implements Runnable {
         try {
             this.client = Net.initClient(Config.Client_hostname, Config.Client_port);
         } catch (IOException ex) {
-            ex.printStackTrace();
-            if (this.client != null) {
-                try {                    
+            System.err.println(ex.getMessage());
+            reconnect = true;
+            reConnect();
+        }
+        this.prot = new Protocol(this.client, this.path);
+    }
+    
+    private void reConnect()
+    {
+        do {
+            try {
+                if (this.client != null) {
                     this.client.close();
-                } catch (IOException ex1) {
+                }
+                this.prot = null;
+                this.client = Net.initClient(Config.Client_hostname, Config.Client_port);
+                reconnTimes = 0;
+                reconnect = false;
+            } catch (IOException ex) {
+                System.err.println(ex.getMessage());
+                if (reconnTimes == Config.Client_reconnect_max_times) {
+                    System.exit(1);
+                }
+                
+                reconnTimes++;
+                System.err.println("sleep "+reconnTimes+" reconnect");
+
+                try {
+                    Thread.sleep(reconnTimes * 1000);
+                } catch (InterruptedException ex1) {
                     ex1.printStackTrace();
                 }
+                
             }
-        }
+        } while (reconnect);
+        
         this.prot = new Protocol(this.client, this.path);
     }
     
     @Override
     public void run() {
         for (;;) {
+            if (this.reconnect) {
+                reConnect();
+            }
             doScan(this.path);
             doDifferent();
             doPush();
@@ -57,10 +88,11 @@ public class ClientWorker implements Runnable {
             try {
                 prot.checkObject(msg);
             } catch (IOException e) {
-                e.printStackTrace();
+                System.err.println(e.getMessage());
+                this.reconnect = true;
+                return;
             }
         }
-        
     }
     
     private void doDifferent()
