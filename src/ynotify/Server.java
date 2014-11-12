@@ -11,7 +11,6 @@ public class Server {
     private void initServer() {
         ServerWorker sw = new ServerWorker(this.path);
         Thread t = new Thread(sw);
-//        t.setDaemon(true);
         t.start();
 //        sw.run();
     }

@@ -12,7 +12,7 @@ public class Client {
         ClientWorker cw = new ClientWorker(notifyPath);
         Thread worker = new Thread(cw);
 //        worker.setDaemon(true);
-        worker.start();
-//        cw.run();
+//        worker.start();
+        cw.run();
     }
 }

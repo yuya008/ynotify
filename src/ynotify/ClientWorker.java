@@ -1,12 +1,13 @@
 package ynotify;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 
 public class ClientWorker implements Runnable {
     private String path = null;
-    private HashMap<File, String> hm = new HashMap<File, String>();
+    private ArrayList<Message> fileList = new ArrayList<Message>();
+    private ArrayList<Message> newList = new ArrayList<Message>();
+    
     public boolean push = false;
     private Net client = null;
 
@@ -26,14 +27,14 @@ public class ClientWorker implements Runnable {
                 }
             }
         }
-        this.prot = new Protocol(this.client, this.path, this.hm);
+        this.prot = new Protocol(this.client, this.path);
     }
     
     @Override
     public void run() {
         for (;;) {
-            hm.clear();
             doScan(this.path);
+            doDifferent();
             doPush();
             try {
                 Thread.sleep(2000);
@@ -44,17 +45,17 @@ public class ClientWorker implements Runnable {
     }
 
     public void doPush() {
-        Iterator<File> fsetIter = hm.keySet().iterator();
-        File tf = null;
+        Iterator<Message> fsetIter = fileList.iterator();
+        Message msg = null;
         
-        if (hm.size() == 0) {
+        if (fileList.isEmpty()) {
             return;
         }
         
         for (;fsetIter.hasNext();) {
-            tf = fsetIter.next();
+            msg = fsetIter.next();
             try {
-                prot.checkObject(tf);
+                prot.checkObject(msg);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -62,18 +63,40 @@ public class ClientWorker implements Runnable {
         
     }
     
-    private void doScan(String scanPath)
+    private void doDifferent()
     {
+        if (fileList.isEmpty()) {
+            fileList = this.newList;
+            this.newList = null;
+            return;
+        }
+        
+        Message msg = null;
+        for (Iterator<Message> iter = fileList.iterator(); iter.hasNext();) {
+            msg = iter.next();
+            if (!fileList.contains(msg)) {
+                msg.setOperation("Delete");
+                this.newList.add(msg);
+            }
+        }
+        fileList = this.newList;
+        this.newList = null;
+    }
+    
+    private void doScan(String scanPath) {
         File f = new File(scanPath);
         File[] files = f.listFiles();
+        Message msg = null;
+        if (this.newList == null) {
+            this.newList = new ArrayList<Message>();
+        }
         
         for (File dirent : files) {
-            if (dirent.isDirectory()) {
-                hm.put((File)dirent, (String)"dir");
-                doScan(dirent.getAbsolutePath());
-            } else {
-                hm.put((File)dirent, (String)Util.fileMd5(dirent));
-            }
+           msg = Message.createNewMessage(dirent, dirent.getAbsolutePath().substring(this.path.length()));
+           newList.add(msg);
+           if (dirent.isDirectory()) {
+               doScan(dirent.getAbsolutePath());
+           }
         }
     }
 }

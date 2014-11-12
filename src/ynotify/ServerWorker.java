@@ -17,13 +17,27 @@ public class ServerWorker implements Runnable {
         this.prot = new Protocol(this.net, this.path);
     }
     
+    private void ServerReAccept()
+    {
+        try {
+            net.close();
+            this.net = null;
+            this.prot = null;
+            this.net = Net.serverAccept();
+            this.prot = new Protocol(this.net, this.path);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
     @Override
     public void run() {
         for (;;) {
             try {
                 this.prot.receiveObject();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+                ServerReAccept();
             }
         }
     }

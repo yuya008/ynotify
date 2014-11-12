@@ -1,108 +1,79 @@
 package ynotify;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.HashMap;
+import java.io.*;
 
 public class Protocol {
     private String path = null;
-    private HashMap<File, String> hm = null;
     private Net net = null;
     private ObjectOutputStream oos = null;
     private ObjectInputStream ois = null;
-	
-    public Protocol(Net net, String path, HashMap<File, String> hm) {
-        this.net = net;
-        this.path = path;
-        this.hm = hm;
-    }
 	
     public Protocol(Net net, String path) {
         this.net = net;
         this.path = path;
     }
 	
-    public void checkObject(File f) throws IOException {
-        String md5str = "";
-        String nPath = "";
-        
+    public void checkObject(Message msg) throws IOException {  
         if (oos == null) {
             oos = new ObjectOutputStream(net.getWriteStream());
         }
-		
-        md5str = hm.get(f);
-        nPath = f.getAbsolutePath().substring(this.path.length());
-		
-        oos.writeBytes(nPath);
+        oos.writeObject(msg);
         oos.flush();
-        oos.writeBytes(md5str);
-        oos.flush();
-        
-        if (checkStatus() == false && f.isFile()) { // transfer
-            transfer(f);
+        if (checkStatus() == false && msg.file.isFile()) { // transfer
+            transfer(msg);
         }
     }
 	
-    private boolean checkFile(String s, String amd5) {
-        File f = new File(this.path + s);
+    private boolean checkFile(Message msg) {
+        File f = new File(this.path + msg.fileRelativePath);
         String m = null;
         
         if (!f.exists()) {
             return false;
         }
-        if (!amd5.equals("dir")) {
+        if (!msg.md5.equals("")) {
             m = Util.fileMd5(f);
-            if (!m.equals(amd5)) {
+            if (!m.equals(msg.md5)) {
                 return false;
             }
         }
         return true;
     }
 	
-    public void receiveObject() throws IOException {
-        String amd5 = null, cfile = null;
+    public void receiveObject() throws Exception {
+        Message msg = null;
 		
-        cfile = readObject();
-        amd5 = readObject();
+        msg = (Message)readObject();
         
-        if (checkFile(cfile, amd5) == false) {
-            sayStatus("no");
-            if (amd5.equals("dir")) {
-                mkDir(cfile);
-            } else {
-                touchFile(cfile);
-            }
-        } else {
-            sayStatus("ok");
+        switch (msg.operation) {
+            case "Check":
+                if (checkFile(msg) == false) {
+                    if (msg.file.isDirectory()) {
+                        sayStatus("ok");
+                        mkDir(msg);
+                    } else {
+                        sayStatus("no");
+                        touchFile(msg);
+                    }
+                } else {
+                    sayStatus("ok");
+                }break;
+            case "Delete":
+                break;
         }
-    }
-
-    private long readFileLength() throws IOException {
-        long cfile = -1;
-        
-        if (ois == null) {
-            ois = new ObjectInputStream(net.getReadStream());
-        }
-        return ois.readLong();
     }
 	
-    public void touchFile(String s) throws IOException
-    {
-        File f = new File(this.path + s);
+    public void touchFile(Message msg) throws IOException {
+        File f = new File(this.path + msg.fileRelativePath);
         BufferedOutputStream bos = null;
         byte b[] = new byte[1024];
         int readn = 0, n = -1, lindex = -1;
-        long fileLength = readFileLength();
+        long fileLength = msg.file.length();
         String dirp = "";
         
-        lindex = s.lastIndexOf(File.separator);
+        lindex = msg.fileRelativePath.lastIndexOf(File.separator);
         if (lindex != -1) {
-            dirp = s.substring(0, lindex);
+            dirp = msg.fileRelativePath.substring(0, lindex);
         }
             
         File fdir = new File(this.path + dirp);
@@ -134,13 +105,12 @@ public class Protocol {
         bos.close();  
     }
 	
-    private void mkDir(String cfile) {
-        File f = new File(this.path + cfile);
+    private void mkDir(Message msg) {
+        File f = new File(this.path + msg.fileRelativePath);
         f.mkdirs();
     }
 	
-    private void sayStatus(String status) throws IOException
-    {
+    private void sayStatus(String status) throws IOException {
         if (oos == null) {
             oos = new ObjectOutputStream(net.getWriteStream());
         }
@@ -148,21 +118,15 @@ public class Protocol {
         oos.flush();
     }
 	
-    private String readObject() throws IOException {
-        byte[] buf = new byte[1024];
-        String cfile = null;
-        int i = -1;
+    private Message readObject() throws Exception {
+        Message i = null;
         
         if (ois == null) {
             ois = new ObjectInputStream(net.getReadStream());
         }
         
-        i = ois.read(buf);
-        if (i == -1) {
-            throw new IOException("read object fail");
-        }
-        cfile = new String(buf, 0, i);
-        return cfile;
+        i = (Message) ois.readObject();
+        return i;
     }
 	
     private boolean checkStatus() throws IOException {
@@ -178,27 +142,16 @@ public class Protocol {
         return status.equals("ok");
     }
     
-    private void sayFileLength(long n) throws IOException {
-    	if (oos == null) {
-            oos = new ObjectOutputStream(net.getWriteStream());
-    	}
-    	oos.writeLong(n);
-    	oos.flush();
-    }
-    
-    private void transfer(File tf) throws IOException {
+    private void transfer(Message msg) throws IOException {
         byte buf[] = new byte[1024];
         
         FileInputStream dis = null;
-        BufferedOutputStream sis = null;
         int readn = -1;
         
-        dis = new FileInputStream(tf);
+        dis = new FileInputStream(msg.file);
         if (oos == null) {
             oos = new ObjectOutputStream(net.getWriteStream());
         }
-        
-        sayFileLength(tf.length());
         
         for (;;) {
             readn = dis.read(buf);

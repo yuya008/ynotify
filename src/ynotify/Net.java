@@ -9,6 +9,7 @@ public class Net
     private int type = 0;
     private InputStream is = null;
     private OutputStream os = null;
+    private static ServerSocket sock = null;
 	
     public static final int NET_SERVER = 0;
     public static final int NET_CLIENT = 1;
@@ -22,7 +23,7 @@ public class Net
     public static Net initServer(String hostname, int port) throws IOException
     {
         Socket clientSocket = null;
-        ServerSocket sock = new ServerSocket();
+        sock = new ServerSocket();
         sock.bind(new InetSocketAddress(hostname, port));
         clientSocket = sock.accept();
         clientSocket.setKeepAlive(true);
@@ -35,6 +36,19 @@ public class Net
         client.setKeepAlive(true);
         client.connect(new InetSocketAddress(hostname, port));
         return new Net(client, NET_CLIENT);
+    }
+    
+    public static Net serverAccept() throws IOException
+    {
+        Socket clientSocket = null;
+        clientSocket = sock.accept();
+        clientSocket.setKeepAlive(true);
+        return new Net(clientSocket, NET_SERVER);
+    }
+    
+    public static ServerSocket getServerSocket()
+    {
+        return Net.sock;
     }
     
     public OutputStream getWriteStream() throws IOException
