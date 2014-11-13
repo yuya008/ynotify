@@ -39,6 +39,25 @@ public class Protocol {
         }
         return true;
     }
+    
+    public void deleteFile(String p)
+    {
+        File f = new File(p);
+        if (!f.exists()) {
+            return;
+        }
+        
+        if (f.isDirectory()) {
+            File[] fl = f.listFiles();
+            for (File file : fl) {
+                if (file.isDirectory()) {
+                    deleteFile(file.getAbsolutePath());
+                }
+                file.delete();
+            }
+        }
+        f.delete();
+    }
 	
     public void receiveObject() throws Exception {
         Message msg = null;
@@ -59,6 +78,7 @@ public class Protocol {
                     sayStatus("ok");
                 }break;
             case "Delete":
+                //deleteFile(this.path + msg.fileRelativePath);
                 break;
         }
     }
