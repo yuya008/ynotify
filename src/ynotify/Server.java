@@ -10,8 +10,8 @@ public class Server {
 	
     private void initServer() {
         ServerWorker sw = new ServerWorker(this.path);
-        Thread t = new Thread(sw);
-        t.start();
-//        sw.run();
+//        Thread t = new Thread(sw);
+//        t.start();
+        sw.run();
     }
 }

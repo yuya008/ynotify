@@ -95,21 +95,56 @@ public class Util
         return str.replace('\\', '/');
     }
     
-    public static String[] parseArgs(String[] args) {
-        char lastchar;
-        if (args.length != 2) {
-            System.err.println("args fail");
-            System.exit(1);
+    public static void panic(String str)
+    {
+        System.err.println(str);
+        System.exit(1);
+    }
+    
+    public static void parseArgs(String[] args) {
+        if (args.length != 7) {
+            Util.panic("args fail");
         }
-        if (args[1] != null) {
-            lastchar = args[1].charAt(args[1].length() - 1);
-            if (lastchar != '/') {
-                args[1] += "/";
+        
+        if (!args[0].equals("server") && !args[0].equals("client")) {
+            Util.panic("args fail");
+        }
+        
+        String path = "", hostname = "";
+        int port = 0;
+        
+        for (int i = 1; i < args.length; i++) {
+            switch (args[i]) {
+                case "--path":
+                    path = args[++i];
+                    break;
+                case "--hostname":
+                    hostname = args[++i];
+                    break;
+                case "--port":
+                    port = Integer.parseUnsignedInt(args[++i]);
+                    break;
+                default:
+                    Util.panic("args fail");
             }
-        } else {
-            System.err.println("args fail");
-            System.exit(1);
         }
-        return args;
+        
+        char lastchar = path.charAt(args[1].length() - 1);
+        if (lastchar != '/') {
+            path += "/";
+        }
+        if (File.separatorChar == '\\') {
+           path = path.replace("\\", "/");
+        }
+        
+        if (args[0].equals("server")) {
+            Config.Server_notify_path = path;
+            Config.Server_hostname = hostname;
+            Config.Server_port = port;
+        } else if (args[0].equals("client")) {
+            Config.Client_notify_path = path;
+            Config.Client_hostname = hostname;
+            Config.Client_port = port;
+        }
     }
 }

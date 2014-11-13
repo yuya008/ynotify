@@ -10,8 +10,7 @@ public class Client {
     
     private void clientInit() {
         ClientWorker cw = new ClientWorker(notifyPath);
-        Thread worker = new Thread(cw);
-//        worker.setDaemon(true);
+//        Thread worker = new Thread(cw);
 //        worker.start();
         cw.run();
     }

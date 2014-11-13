@@ -3,11 +3,12 @@ package ynotify;
 public class Ynotify {
     
     public static void main(String[] args) {
-    	args = Util.parseArgs(args);
+    	Util.parseArgs(args);
+        
         if (args[0].equals("server")) {
-            new Server(args[1]);
+            new Server(Config.Server_notify_path);
         } else if (args[0].equals("client")) {
-            new Client(args[1]);
+            new Client(Config.Client_notify_path);
         } else {
             System.err.println("args fail");
             System.exit(1);
