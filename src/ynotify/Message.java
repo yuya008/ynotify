@@ -8,8 +8,7 @@ public class Message implements java.io.Serializable {
     public String operation;
     public String md5;
     
-    public static Message createNewMessage(File f, String path)
-    {
+    public static Message createNewMessage(File f, String path) {
         Message msg = new Message();
         msg.file = f;
         msg.fileRelativePath = path;
@@ -19,14 +18,19 @@ public class Message implements java.io.Serializable {
         return msg;
     }
     
-    public void setOperation(String op)
-    {
-        this.operation = op;
-    }
-    
     @Override
-    public boolean equals(Object obj)
-    {
+    public Message clone() {
+        Message msg = new Message();
+        msg.file = this.file;
+        msg.fileRelativePath = this.fileRelativePath;
+        msg.operation = "Check";
+        msg.md5 = this.file.isFile() ? Util.fileMd5(this.file) : "";
+        
+        return msg;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

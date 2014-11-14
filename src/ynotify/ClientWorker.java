@@ -84,6 +84,7 @@ public class ClientWorker implements Runnable {
         }
         
         for (;fsetIter.hasNext();) {
+
             msg = fsetIter.next();
             try {
                 prot.checkObject(msg);
@@ -106,9 +107,10 @@ public class ClientWorker implements Runnable {
         Message msg = null;
         for (Iterator<Message> iter = fileList.iterator(); iter.hasNext();) {
             msg = iter.next();
-            if (!fileList.contains(msg)) {
-                msg.setOperation("Delete");
-                this.newList.add(msg);
+            if (!this.newList.contains(msg) && msg.operation.equals("Check")) {
+                Message newMsg = msg.clone();
+                newMsg.operation = "Delete";
+                this.newList.add(newMsg);
             }
         }
         fileList = this.newList;

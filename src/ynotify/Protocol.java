@@ -60,9 +60,7 @@ public class Protocol {
     }
 	
     public void receiveObject() throws Exception {
-        Message msg = null;
-		
-        msg = (Message)readObject();
+        Message msg = (Message)readObject();
         
         switch (msg.operation) {
             case "Check":
@@ -78,7 +76,8 @@ public class Protocol {
                     sayStatus("ok");
                 }break;
             case "Delete":
-                //deleteFile(this.path + msg.fileRelativePath);
+                deleteFile(this.path + msg.fileRelativePath);
+                sayStatus("ok");
                 break;
         }
     }
@@ -139,13 +138,11 @@ public class Protocol {
     }
 	
     private Message readObject() throws Exception {
-        Message i = null;
-        
         if (ois == null) {
             ois = new ObjectInputStream(net.getReadStream());
         }
         
-        i = (Message) ois.readObject();
+        Message i = (Message) ois.readObject();
         return i;
     }
 	
