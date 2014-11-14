@@ -129,7 +129,7 @@ public class Util
             }
         }
         
-        char lastchar = path.charAt(args[1].length() - 1);
+        char lastchar = path.charAt(path.length() - 1);
         if (lastchar != '/') {
             path += "/";
         }

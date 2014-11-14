@@ -19,7 +19,7 @@ public class Protocol {
         }
         oos.writeObject(msg);
         oos.flush();
-        if (checkStatus() == false && msg.file.isFile()) { // transfer
+        if (checkStatus() == false && msg.fileType.equals("file")) { // transfer
             transfer(msg);
         }
     }
@@ -65,7 +65,7 @@ public class Protocol {
         switch (msg.operation) {
             case "Check":
                 if (checkFile(msg) == false) {
-                    if (msg.file.isDirectory()) {
+                    if (msg.fileType.equals("dir")) {
                         sayStatus("ok");
                         mkDir(msg);
                     } else {
@@ -87,7 +87,7 @@ public class Protocol {
         BufferedOutputStream bos = null;
         byte b[] = new byte[1024];
         int readn = 0, n = -1, lindex = -1;
-        long fileLength = msg.file.length();
+        long fileLength = msg.fileSize;
         String dirp = "";
         
         lindex = msg.fileRelativePath.lastIndexOf(File.separator);
